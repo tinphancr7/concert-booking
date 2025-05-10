@@ -1,17 +1,18 @@
-import mongoose, { Document, Schema } from 'mongoose'
+import mongoose, { Document, Schema, Types } from 'mongoose'
 import { SeatType } from './concert.model.js'
 
 export interface IBooking extends Document {
-  userId: string
-  concertId: string
+  userId: Types.ObjectId
+  concertId: Types.ObjectId
+  code: string
   seatType: SeatType
   createdAt: Date
 }
-
 const BookingSchema = new Schema<IBooking>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     concertId: { type: Schema.Types.ObjectId, ref: 'Concert', required: true },
+    code: { type: String, required: true, unique: true },
     seatType: { type: String, required: true }
   },
   { timestamps: { createdAt: 'createdAt' } }

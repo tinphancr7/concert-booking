@@ -13,6 +13,7 @@ import { statusCodes } from './constants/status-codes'
 import { UnprocessableEntityError } from './core/error.response'
 import Database from './db/init.mongodb'
 import initialRouter from './routers'
+import { syncConcertSeatsToRedis } from './utils/syncConcertSeatsToRedis'
 
 dotenv.config()
 
@@ -30,7 +31,7 @@ Database.getInstance()
 
 //init router
 initialRouter(app)
-
+syncConcertSeatsToRedis()
 //handle error
 
 app.use((req: Request, res: Response, next: NextFunction) => {
