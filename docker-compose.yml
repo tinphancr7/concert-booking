@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: concert-booking-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '5555:5555'
+    environment:
+      - PORT=5555
+      - MONGO_URL=mongodb+srv://phanthanhtincr7:phanthanhtincr7@cluster0.r3jpatk.mongodb.net/concert_booking?retryWrites=true&w=majority&appName=Cluster0
+      - REDIS_URL=rediss://default:AW-DAAIjcDE0YzE4MGRiODcxZjg0NTU3OGQxYjkxMTQxM2UxMDhhZnAxMA@cheerful-ewe-28547.upstash.io:6379
+      - JWT_SECRET=supersecretkey
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=465
+      - SMTP_SERVICE=gmail
+      - SMTP_MAIL=phanthanhtincr7@gmail.com
+      - SMTP_PASSWORD=znoi jfbl hxqp sifc
+    volumes:
+      - .:/app
+      - /app/node_modules # ✅ This prevents host node_modules from overriding container
+
+    command: npm run dev

@@ -5,6 +5,7 @@ import mongoose from 'mongoose'
 import { User } from '~/models/user.model.js'
 import { sendBookingConfirmationEmail } from '~/utils/mailer.js'
 import { generateConfirmationCode } from '~/utils/generateCode.js'
+import { emailQueue } from '~/workers/email.worker'
 
 export async function generateUniqueBookingCode(): Promise<string> {
   let code: string
@@ -63,19 +64,21 @@ export async function attemptBooking(
     })
 
     // ✅ After Mongo transaction commits successfully
-    if (bookingCreated) {
-      const user = await User.findById(userId)
-      const concert = await Concert.findById(concertId)
-
-      if (user?.email && concert?.name) {
-        try {
-          await sendBookingConfirmationEmail(user.email, concert.name, seatType, concert.date, code)
-        } catch (err) {
-          console.warn('⚠️ Booking succeeded but email failed to send', err)
-          // Do not throw here!
-        }
-      }
-    }
+    // if (bookingCreated) {
+    //   console.log('Booking created successfully:', code)
+    //   await emailQueue.add(
+    //     {
+    //       userId,
+    //       concertId,
+    //       seatType,
+    //       bookingCode: code
+    //     },
+    //     {
+    //       attempts: 3,
+    //       backoff: 5000
+    //     }
+    //   )
+    // }
     return 'OK'
   } catch (error) {
     // ❌ Rollback Redis if DB transaction fails

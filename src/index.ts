@@ -15,9 +15,24 @@ import Database from './db/init.mongodb'
 import initialRouter from './routers'
 import { syncConcertSeatsToRedis } from './utils/syncConcertSeatsToRedis'
 
+import { createBullBoard } from '@bull-board/api'
+import { BullAdapter } from '@bull-board/api/bullAdapter'
+import { ExpressAdapter } from '@bull-board/express'
+import { emailQueue } from './workers/email.worker'
+
 dotenv.config()
 
 const app = express()
+
+const serverAdapter = new ExpressAdapter()
+serverAdapter.setBasePath('/admin/queues')
+
+createBullBoard({
+  queues: [new BullAdapter(emailQueue)],
+  serverAdapter
+})
+
+app.use('/admin/queues', serverAdapter.getRouter()) // mount the dashboard
 //init middleware
 
 app.use(helmet())

@@ -4,10 +4,11 @@ import { AuthRequest } from '../utils/requireAuth.js'
 import { Booking } from '~/models/booking.model.js'
 import redis from '~/config/redis.js'
 import { Concert } from '~/models/concert.model.js'
-import { emailQueue } from '~/queues/email.queue.js'
+import mongoose from 'mongoose'
 
 export const bookTicket = async (req: AuthRequest, res: Response) => {
-  const userId = req.userId!
+  console.log('Booking ticket...')
+  const userId = new mongoose.Types.ObjectId()
   const concertId = req.params.concertId
   const { seatType } = req.body
 
@@ -35,6 +36,7 @@ export const bookTicket = async (req: AuthRequest, res: Response) => {
 }
 
 export const getAllBookings = async (_: Request, res: Response) => {
+  console.log('Fetching all bookings...')
   const bookings = await Booking.find()
   res.json(bookings)
 }

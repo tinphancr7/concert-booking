@@ -5,7 +5,7 @@ import mongoose from 'mongoose'
 import { User } from '~/models/user.model.js'
 import { sendBookingConfirmationEmail } from '~/utils/mailer.js'
 import { generateConfirmationCode } from '~/utils/generateCode.js'
-import { emailQueue } from '~/workers/email.worker.js'
+import { emailQueue } from '~/workers/email.worker'
 
 export async function generateUniqueBookingCode(): Promise<string> {
   let code: string
@@ -24,21 +24,21 @@ export async function attemptBooking(
   concertId: string,
   seatType: string
 ): Promise<'OK' | 'DUPLICATE' | 'SOLD_OUT'> {
-  const redisKey = `concert:${concertId}:seat:${seatType}`
-  const userKey = `concert:${concertId}:user:${userId}`
+  // const redisKey = `concert:${concertId}:seat:${seatType}`
+  // const userKey = `concert:${concertId}:user:${userId}`
 
-  // Run Lua in Redis to check and reserve
-  const luaScript = `
-    if redis.call("get", KEYS[2]) then return "DUPLICATE" end
-    local seats = tonumber(redis.call("get", KEYS[1]) or "-1")
-    if seats <= 0 then return "SOLD_OUT" end
-    redis.call("decr", KEYS[1])
-    redis.call("set", KEYS[2], 1)
-    return "OK"
-  `
+  // // Run Lua in Redis to check and reserve
+  // const luaScript = `
+  //   if redis.call("get", KEYS[2]) then return "DUPLICATE" end
+  //   local seats = tonumber(redis.call("get", KEYS[1]) or "-1")
+  //   if seats <= 0 then return "SOLD_OUT" end
+  //   redis.call("decr", KEYS[1])
+  //   redis.call("set", KEYS[2], 1)
+  //   return "OK"
+  // `
 
-  const result = await redis.eval(luaScript, 2, redisKey, userKey)
-  if (result !== 'OK') return result as 'DUPLICATE' | 'SOLD_OUT'
+  // const result = await redis.eval(luaScript, 2, redisKey, userKey)
+  // if (result !== 'OK') return result as 'DUPLICATE' | 'SOLD_OUT'
 
   const session = await mongoose.startSession()
   let bookingCreated = false
@@ -61,29 +61,41 @@ export async function attemptBooking(
       }
       bookingCreated = true // Only true if Mongo committed
       // ✅ Step 3: send confirmation email (optional)
+      // await emailQueue.add(
+      //   {
+      //     userId,
+      //     concertId,
+      //     seatType,
+      //     bookingCode: code
+      //   },
+      //   {
+      //     attempts: 3,
+      //     backoff: 5000
+      //   }
+      // )
     })
 
     // ✅ After Mongo transaction commits successfully
-    if (bookingCreated) {
-      console.log('Booking created successfully:', code)
-      await emailQueue.add(
-        {
-          userId,
-          concertId,
-          seatType,
-          bookingCode: code
-        },
-        {
-          attempts: 3,
-          backoff: 5000
-        }
-      )
-    }
+    // if (bookingCreated) {
+    //   console.log('Booking created successfully:', code)
+    //   await emailQueue.add(
+    //     {
+    //       userId,
+    //       concertId,
+    //       seatType,
+    //       bookingCode: code
+    //     },
+    //     {
+    //       attempts: 3,
+    //       backoff: 5000
+    //     }
+    //   )
+    // }
     return 'OK'
   } catch (error) {
     // ❌ Rollback Redis if DB transaction fails
-    await redis.incr(redisKey)
-    await redis.del(userKey)
+    // await redis.incr(redisKey)
+    // await redis.del(userKey)
     console.error('❌ Transaction failed, Redis rolled back:', error)
     return 'SOLD_OUT' // or 'ERROR'
   } finally {
